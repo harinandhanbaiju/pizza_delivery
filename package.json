@@ -1,4 +1,12 @@
 {
+  "name": "pizza-delivery",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "backend": "npm --prefix pizza-backend run start",
+    "frontend": "npm --prefix pizza-frontend run dev",
+    "frontend:build": "npm --prefix pizza-frontend run build"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",

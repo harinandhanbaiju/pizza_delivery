@@ -1,9 +1,12 @@
 import React from "react";
-import { pizzaOptions } from "../../data/pizzaOptions";
 import { usePizzaBuilder } from "../../context/PizzaBuilderContext";
 
 const VeggieStep = () => {
-    const { pizzaData, updatePizza } = usePizzaBuilder();
+    const { pizzaData, updatePizza, options, isOptionsLoading } = usePizzaBuilder();
+
+    if (isOptionsLoading) {
+        return <section><h2>Step 4: Choose Veggies</h2><p>Loading options...</p></section>;
+    }
 
     const toggleVeggie = (veggie) => {
         const exists = pizzaData.veggies.includes(veggie);
@@ -17,15 +20,15 @@ const VeggieStep = () => {
     return (
         <section>
             <h2>Step 4: Choose Veggies</h2>
-            {pizzaOptions.veggies.map((veggie) => (
-                <label key={veggie} className="option-row">
+            {options.veggie.map((veggieItem) => (
+                <label key={veggieItem.name} className="option-row">
                     <input
                         type="checkbox"
-                        value={veggie}
-                        checked={pizzaData.veggies.includes(veggie)}
-                        onChange={() => toggleVeggie(veggie)}
+                        value={veggieItem.name}
+                        checked={pizzaData.veggies.includes(veggieItem.name)}
+                        onChange={() => toggleVeggie(veggieItem.name)}
                     />
-                    <span>{veggie}</span>
+                    <span>{veggieItem.name}</span>
                 </label>
             ))}
         </section>

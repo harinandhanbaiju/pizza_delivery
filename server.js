@@ -1,11 +1,2 @@
-const express = require("express");
-
-const app = express();
-
-app.get("/", (req, res) => {
-    res.send("API Running...");
-});
-
-app.listen(5000, () => {
-    console.log("Server running on port 5000");
-});
+// Root launcher: keeps `node server.js` working by delegating to the backend app.
+require("./pizza-backend/server");

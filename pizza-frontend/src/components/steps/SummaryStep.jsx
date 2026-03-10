@@ -1,73 +1,102 @@
 import React from "react";
 import { useState } from "react";
 import { usePizzaBuilder } from "../../context/PizzaBuilderContext";
-import { createOrder } from "../../services/orderService";
-
-const ingredientPrices = {
-    base: {
-        "Thin Crust": 120,
-        "Classic Pan": 140,
-        "Whole Wheat": 150,
-    },
-    sauce: {
-        "Tomato Basil": 35,
-        "Spicy Arrabbiata": 45,
-        Pesto: 50,
-    },
-    cheese: {
-        Mozzarella: 60,
-        Cheddar: 65,
-        "Vegan Cheese": 80,
-    },
-    veggie: 20,
-};
+import {
+    confirmTestPayment,
+    createRazorpayOrder,
+    verifyPayment,
+} from "../../services/orderService";
+import { useAuth } from "../../context/AuthContext";
 
 const SummaryStep = () => {
     const { pizzaData } = usePizzaBuilder();
+    const { token, user } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const totalPrice =
-        (ingredientPrices.base[pizzaData.base] || 0) +
-        (ingredientPrices.sauce[pizzaData.sauce] || 0) +
-        (ingredientPrices.cheese[pizzaData.cheese] || 0) +
-        pizzaData.veggies.length * ingredientPrices.veggie;
+    const [estimatedTotal, setEstimatedTotal] = useState(null);
+    const razorpayMode = (import.meta.env.VITE_RAZORPAY_MODE || "test").toLowerCase();
+    const isTestMode = razorpayMode === "test";
 
     const handlePayNow = async () => {
         try {
+            if (!token) {
+                alert("Please login before placing an order");
+                return;
+            }
+
             setIsSubmitting(true);
 
-            // In production, userId should come from authenticated session/JWT.
-            const orderPayload = {
-                userId: "64f0f9c2a4d3f0b1c2d3e4f5",
-                pizzaConfig: pizzaData,
-                totalPrice,
-                paymentStatus: "Pending",
+            const paymentOrder = await createRazorpayOrder(pizzaData, token);
+            setEstimatedTotal(paymentOrder.amount / 100);
+
+            const handlePaymentSuccess = async (response = {}) => {
+                if (response.razorpay_signature) {
+                    return verifyPayment(
+                        {
+                            localOrderId: paymentOrder.localOrderId,
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                        },
+                        token
+                    );
+                }
+
+                if (isTestMode) {
+                    return confirmTestPayment(paymentOrder.localOrderId, token);
+                }
+
+                throw new Error("Payment success payload missing");
             };
 
-            const order = await createOrder(orderPayload);
-
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_key",
-                amount: totalPrice * 100,
+                key: paymentOrder.razorpayKeyId,
+                amount: paymentOrder.amount,
                 currency: "INR",
                 name: "Pizza Delivery",
-                description: `Custom Pizza Order ${order._id}`,
-                handler: function () {
-                    alert("Payment successful. Order placed.");
+                description: `Custom Pizza Order ${paymentOrder.localOrderId}`,
+                order_id: paymentOrder.razorpayOrderId,
+                handler: async function (response) {
+                    try {
+                        const result = await handlePaymentSuccess(response);
+                        alert(result.message || "Payment successful. Order placed.");
+                    } catch (error) {
+                        alert(error.message || "Payment succeeded but order confirmation failed");
+                    }
                 },
                 prefill: {
-                    email: "customer@example.com",
+                    name: user?.name || "Test Customer",
+                    email: user?.email || "success@razorpay.com",
+                    contact: user?.phone || "9000090000",
+                },
+                notes: {
+                    testMode: isTestMode ? "true" : "false",
+                },
+                modal: {
+                    ondismiss: function () {
+                        setIsSubmitting(false);
+                    },
                 },
                 theme: {
                     color: "#c44536",
                 },
             };
 
+            if (paymentOrder.isMockOrder) {
+                const result = await confirmTestPayment(paymentOrder.localOrderId, token);
+                alert(result.message || "Test payment confirmed. Order placed.");
+                return;
+            }
+
             if (window.Razorpay) {
                 const razorpay = new window.Razorpay(options);
                 razorpay.open();
             } else {
-                alert("Order created. Add Razorpay checkout script to enable payment popup.");
+                if (isTestMode) {
+                    const result = await confirmTestPayment(paymentOrder.localOrderId, token);
+                    alert(result.message || "Test payment confirmed. Order placed.");
+                } else {
+                    alert("Razorpay checkout is not loaded.");
+                }
             }
         } catch (error) {
             alert(error.message || "Failed to place order");
@@ -83,7 +112,8 @@ const SummaryStep = () => {
             <p><strong>Sauce:</strong> {pizzaData.sauce}</p>
             <p><strong>Cheese:</strong> {pizzaData.cheese}</p>
             <p><strong>Veggies:</strong> {pizzaData.veggies.length ? pizzaData.veggies.join(", ") : "None"}</p>
-            <p><strong>Total:</strong> INR {totalPrice}</p>
+            <p><strong>Total:</strong> INR {estimatedTotal !== null ? estimatedTotal : "Calculated at checkout"}</p>
+            <p><strong>Payment Mode:</strong> {isTestMode ? "Razorpay Test" : "Razorpay Live"}</p>
             <button type="button" onClick={handlePayNow} disabled={isSubmitting}>
                 {isSubmitting ? "Processing..." : "Pay Now"}
             </button>

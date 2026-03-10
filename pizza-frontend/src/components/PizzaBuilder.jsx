@@ -1,4 +1,5 @@
 import React from "react";
+import { useEffect } from "react";
 import BaseStep from "./steps/BaseStep";
 import SauceStep from "./steps/SauceStep";
 import CheeseStep from "./steps/CheeseStep";
@@ -7,7 +8,13 @@ import SummaryStep from "./steps/SummaryStep";
 import { usePizzaBuilder } from "../context/PizzaBuilderContext";
 
 const PizzaBuilder = () => {
-    const { currentStep, pizzaData, nextStep, prevStep } = usePizzaBuilder();
+    const { currentStep, pizzaData, nextStep, prevStep, loadOptions } = usePizzaBuilder();
+
+    useEffect(() => {
+        loadOptions().catch((error) => {
+            alert(error.message || "Failed to load inventory");
+        });
+    }, [loadOptions]);
 
     const stepComponentMap = {
         1: <BaseStep />,

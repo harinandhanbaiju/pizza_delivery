@@ -14,6 +14,71 @@ body {
     padding: 1rem;
 }
 
+.auth-panel {
+    max-width: 720px;
+    margin: 1rem auto;
+    padding: 1rem;
+    border: 1px solid #f2d8b3;
+    border-radius: 12px;
+    background: #fff;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.mode-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.mode-switch button {
+    background: #8b6f47;
+}
+
+.verify-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.verify-actions button {
+    background: #2f855a;
+}
+
+select {
+    padding: 0.6rem;
+    border: 1px solid #e2b77d;
+    border-radius: 8px;
+}
+
+.dashboard-shell {
+    max-width: 720px;
+    margin: 1rem auto;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #f2d8b3;
+    border-radius: 12px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+}
+
+.dashboard-card {
+    border: 1px solid #f2d8b3;
+    border-radius: 10px;
+    padding: 0.75rem;
+    background: #fff9f1;
+}
+
+input {
+    padding: 0.6rem;
+    border: 1px solid #e2b77d;
+    border-radius: 8px;
+}
+
 .step-card {
     background: #ffffff;
     border: 1px solid #f2d8b3;
@@ -46,4 +111,33 @@ button {
 button[disabled] {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+.inventory-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.inventory-table-wrap {
+    overflow-x: auto;
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.inventory-table th,
+.inventory-table td {
+    border: 1px solid #f2d8b3;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.inventory-table td button {
+    margin-right: 0.35rem;
+    padding: 0.35rem 0.55rem;
 }

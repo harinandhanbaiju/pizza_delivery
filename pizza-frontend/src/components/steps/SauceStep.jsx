@@ -1,23 +1,26 @@
 import React from "react";
-import { pizzaOptions } from "../../data/pizzaOptions";
 import { usePizzaBuilder } from "../../context/PizzaBuilderContext";
 
 const SauceStep = () => {
-    const { pizzaData, updatePizza } = usePizzaBuilder();
+    const { pizzaData, updatePizza, options, isOptionsLoading } = usePizzaBuilder();
+
+    if (isOptionsLoading) {
+        return <section><h2>Step 2: Choose Sauce</h2><p>Loading options...</p></section>;
+    }
 
     return (
         <section>
             <h2>Step 2: Choose Sauce</h2>
-            {pizzaOptions.sauce.map((sauce) => (
-                <label key={sauce} className="option-row">
+            {options.sauce.map((sauceItem) => (
+                <label key={sauceItem.name} className="option-row">
                     <input
                         type="radio"
                         name="sauce"
-                        value={sauce}
-                        checked={pizzaData.sauce === sauce}
+                        value={sauceItem.name}
+                        checked={pizzaData.sauce === sauceItem.name}
                         onChange={(event) => updatePizza("sauce", event.target.value)}
                     />
-                    <span>{sauce}</span>
+                    <span>{sauceItem.name}</span>
                 </label>
             ))}
         </section>
