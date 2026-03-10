@@ -6,6 +6,7 @@ import AuthPanel from "./components/AuthPanel";
 import PizzaDashboard from "./components/PizzaDashboard";
 import { useAuth } from "./context/AuthContext";
 import AdminInventoryManager from "./components/AdminInventoryManager";
+import AdminOrderManager from "./components/AdminOrderManager";
 import OvenRushHomeChrome from "./components/OvenRushHomeChrome";
 
 const AuthPage = () => {
@@ -24,7 +25,7 @@ const AuthPage = () => {
 };
 
 const AuthenticatedArea = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
 
     if (!user) {
         return <AuthPage />;
@@ -32,8 +33,17 @@ const AuthenticatedArea = () => {
 
     return (
         <div className="app-shell">
+            <section className="session-bar">
+                <p>
+                    Signed in as <strong>{user?.email}</strong>
+                </p>
+                <button type="button" className="session-logout" onClick={logout}>
+                    Logout
+                </button>
+            </section>
             <OvenRushHomeChrome />
             <PizzaDashboard />
+            {user?.role === "admin" && <AdminOrderManager />}
             {user?.role === "admin" && <AdminInventoryManager />}
             <PizzaBuilder />
         </div>

@@ -8,8 +8,43 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 6;
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const RESET_TOKEN_TTL_MS = 10 * 60 * 1000;
+const ADMIN_LOGIN_WINDOW_MS = Number(process.env.ADMIN_LOGIN_WINDOW_MS || 15 * 60 * 1000);
+const ADMIN_LOGIN_MAX_ATTEMPTS = Number(process.env.ADMIN_LOGIN_MAX_ATTEMPTS || 5);
 
 const normalizeEmail = (email = "") => email.trim().toLowerCase();
+const adminLoginAttempts = new Map();
+
+const getAdminAllowlist = () => {
+    const configured = process.env.ADMIN_LOGIN_ALLOWED_EMAILS || process.env.ADMIN_EMAILS || "";
+    return configured
+        .split(",")
+        .map((email) => normalizeEmail(email))
+        .filter(Boolean);
+};
+
+const getAdminAttemptKey = (req, email) => {
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const ip = String(Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor || req.ip || "unknown").trim();
+    return `${ip}::${normalizeEmail(email)}`;
+};
+
+const consumeAdminLoginAttempt = (key) => {
+    const now = Date.now();
+    const record = adminLoginAttempts.get(key);
+
+    if (!record || now - record.firstAttemptAt > ADMIN_LOGIN_WINDOW_MS) {
+        adminLoginAttempts.set(key, { firstAttemptAt: now, count: 1 });
+        return { count: 1, blocked: false };
+    }
+
+    const next = { ...record, count: record.count + 1 };
+    adminLoginAttempts.set(key, next);
+    return { count: next.count, blocked: next.count > ADMIN_LOGIN_MAX_ATTEMPTS };
+};
+
+const clearAdminLoginAttempts = (key) => {
+    adminLoginAttempts.delete(key);
+};
 
 const buildAuthPayload = (user) => ({
     _id: user._id,
@@ -20,7 +55,7 @@ const buildAuthPayload = (user) => ({
     isAdmin: user.isAdmin,
     role: user.role,
     isVerified: user.isVerified,
-    token: generateToken(user._id),
+    token: generateToken(user),
 });
 
 const ensureValidRegistrationInput = ({ name, email, password }) => {
@@ -188,23 +223,55 @@ const loginAccount = async (req, res, requiredRole) => {
     try {
         const { email, password } = req.body;
         const normalizedEmail = normalizeEmail(email);
+        const isAdminLogin = requiredRole === "admin";
+        const attemptKey = isAdminLogin ? getAdminAttemptKey(req, normalizedEmail) : "";
 
         if (!EMAIL_REGEX.test(normalizedEmail) || !password) {
             return res.status(400).json({ message: "Email and password are required" });
         }
 
+        if (isAdminLogin) {
+            const attemptState = adminLoginAttempts.get(attemptKey);
+            if (attemptState && Date.now() - attemptState.firstAttemptAt <= ADMIN_LOGIN_WINDOW_MS && attemptState.count > ADMIN_LOGIN_MAX_ATTEMPTS) {
+                return res.status(429).json({ message: "Too many admin login attempts. Please try again later." });
+            }
+
+            const allowlist = getAdminAllowlist();
+            if (allowlist.length && !allowlist.includes(normalizedEmail)) {
+                return res.status(401).json({ message: "Invalid admin credentials" });
+            }
+        }
+
         const user = await User.findOne({ email: normalizedEmail });
 
         if (!user || !(await user.matchPassword(password))) {
+            if (isAdminLogin) {
+                const attempt = consumeAdminLoginAttempt(attemptKey);
+                if (attempt.blocked) {
+                    return res.status(429).json({ message: "Too many admin login attempts. Please try again later." });
+                }
+            }
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
         if (requiredRole && user.role !== requiredRole) {
+            if (isAdminLogin) {
+                const attempt = consumeAdminLoginAttempt(attemptKey);
+                if (attempt.blocked) {
+                    return res.status(429).json({ message: "Too many admin login attempts. Please try again later." });
+                }
+                return res.status(401).json({ message: "Invalid admin credentials" });
+            }
+
             return res.status(403).json({ message: `${requiredRole} login is required for this account` });
         }
 
         if (!user.isVerified) {
             return res.status(403).json({ message: "Please verify your email before logging in" });
+        }
+
+        if (isAdminLogin) {
+            clearAdminLoginAttempts(attemptKey);
         }
 
         return res.status(200).json(buildAuthPayload(user));
@@ -267,10 +334,11 @@ const forgotPassword = async (req, res) => {
         await user.save();
 
         const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken.rawToken}`;
-        await sendPasswordResetEmail(user.email, resetUrl);
+        const mailResult = await sendPasswordResetEmail(user.email, resetUrl);
 
         return res.status(200).json({
             message: "Password reset email sent",
+            ...(mailResult.previewUrl ? { resetPreviewUrl: mailResult.previewUrl } : {}),
         });
     } catch (error) {
         return res.status(500).json({ message: error.message });

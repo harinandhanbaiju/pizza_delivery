@@ -4,6 +4,7 @@ const cors = require("cors");
 const path = require("path");
 const connectDB = require("./config/db");
 const User = require("./models/User");
+const { startLowStockMonitor } = require("./services/lowStockMonitor");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -60,6 +61,7 @@ const PORT = process.env.PORT || 5000;
 const startServer = async () => {
     await connectDB();
     await seedDummyAccounts();
+    startLowStockMonitor();
 
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);

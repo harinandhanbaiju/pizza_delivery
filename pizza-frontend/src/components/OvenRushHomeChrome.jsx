@@ -182,16 +182,22 @@ const OvenRushHomeChrome = () => {
                     <h3>{activeBanner.title}</h3>
                     <p>{activeBanner.description}</p>
                 </article>
-                <div className="or-carousel-dots">
-                    {banners.map((banner, index) => (
-                        <button
-                            key={banner.id}
-                            type="button"
-                            className={`or-dot ${index === activeBannerIndex ? "is-active" : ""}`}
-                            onClick={() => setActiveBannerIndex(index)}
-                            aria-label={`Show banner ${index + 1}`}
-                        />
-                    ))}
+                <div className="or-carousel-footer">
+                    <span className="or-carousel-count">
+                        {activeBannerIndex + 1} / {banners.length}
+                    </span>
+                    <div className="or-carousel-dots" role="tablist" aria-label="Banner selector">
+                        {banners.map((banner, index) => (
+                            <button
+                                key={banner.id}
+                                type="button"
+                                className={`or-dot ${index === activeBannerIndex ? "is-active" : ""}`}
+                                onClick={() => setActiveBannerIndex(index)}
+                                aria-label={`Show banner ${index + 1}`}
+                                aria-selected={index === activeBannerIndex}
+                            />
+                        ))}
+                    </div>
                 </div>
             </div>
 

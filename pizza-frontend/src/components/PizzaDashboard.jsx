@@ -1,23 +1,30 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { getInventory } from "../services/inventoryService";
+import { getMyOrders } from "../services/orderService";
 import { useAuth } from "../context/AuthContext";
 
 const PizzaDashboard = () => {
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const [inventory, setInventory] = useState({ base: [], sauce: [], cheese: [], veggie: [], meat: [] });
+    const [myOrders, setMyOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState(null);
 
     const loadDashboard = useCallback(async ({ silent = false } = {}) => {
         try {
-            const data = await getInventory();
+            const [inventoryData, myOrdersData] = await Promise.all([
+                getInventory(),
+                token ? getMyOrders(token) : Promise.resolve({ orders: [] }),
+            ]);
+
             setInventory({
-                base: data.base || [],
-                sauce: data.sauce || [],
-                cheese: data.cheese || [],
-                veggie: data.veggie || [],
-                meat: data.meat || [],
+                base: inventoryData.base || [],
+                sauce: inventoryData.sauce || [],
+                cheese: inventoryData.cheese || [],
+                veggie: inventoryData.veggie || [],
+                meat: inventoryData.meat || [],
             });
+            setMyOrders(myOrdersData.orders || []);
             setLastUpdated(new Date());
         } catch (error) {
             if (!silent) {
@@ -26,7 +33,7 @@ const PizzaDashboard = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [token]);
 
     useEffect(() => {
         loadDashboard();
@@ -129,6 +136,23 @@ const PizzaDashboard = () => {
                     </ul>
                 </article>
             </div>
+
+            <article className="dashboard-card user-orders-card">
+                <h3>My Orders</h3>
+                {!myOrders.length && <p>No orders yet. Place your first custom pizza.</p>}
+                {myOrders.length > 0 && (
+                    <ul className="user-orders-list">
+                        {myOrders.map((order) => (
+                            <li key={order._id}>
+                                <strong>#{order._id.slice(-8)}</strong>
+                                <span>{order.pizzaConfig?.base} / {order.pizzaConfig?.sauce} / {order.pizzaConfig?.cheese}</span>
+                                <span>Status: <b>{order.status || "Order Received"}</b></span>
+                                <span>Payment: {order.paymentStatus || "Pending"}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </article>
         </section>
     );
 };

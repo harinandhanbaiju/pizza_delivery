@@ -52,6 +52,43 @@ body::before {
     padding: 22px clamp(14px, 2.6vw, 28px) 42px;
 }
 
+.session-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 253, 247, 0.86);
+    backdrop-filter: blur(4px);
+}
+
+.session-bar p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--brand-subtle);
+}
+
+.session-bar strong {
+    color: var(--brand-ink);
+}
+
+.session-logout {
+    min-height: 36px;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--brand-red);
+    border-color: #efc4b4;
+    font-weight: 700;
+}
+
+.session-logout:hover {
+    background: #fff2ea;
+    border-color: var(--brand-red);
+}
+
 .auth-page-shell {
     min-height: 100vh;
     max-width: 1040px;
@@ -271,7 +308,7 @@ body::before {
 
 .or-carousel {
     display: grid;
-    gap: 11px;
+    gap: 12px;
 }
 
 .or-banner {
@@ -321,23 +358,47 @@ body::before {
 
 .or-carousel-dots {
     display: flex;
-    justify-content: center;
-    gap: 7px;
+    align-items: center;
+    gap: 8px;
 }
 
 .or-dot {
-    width: 10px;
-    min-width: 10px;
-    height: 10px;
+    width: 30px;
+    min-width: 30px;
+    height: 6px;
     border-radius: 999px;
     border: 0;
-    background: #d6cbc0;
+    background: #dccfbe;
     padding: 0;
+    opacity: 0.8;
 }
 
 .or-dot.is-active {
-    width: 30px;
-    background: var(--brand-red);
+    width: 52px;
+    background: linear-gradient(90deg, #d2452f 0%, #ea9330 100%);
+    opacity: 1;
+}
+
+.or-carousel-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+}
+
+.or-carousel-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 26px;
+    border-radius: 999px;
+    border: 1px solid #e6d8c6;
+    background: #fffdf8;
+    color: #70787c;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 0 10px;
 }
 
 .or-tag {
@@ -640,6 +701,27 @@ button[disabled] {
     margin-bottom: 5px;
 }
 
+.user-orders-card {
+    margin-top: 12px;
+}
+
+.user-orders-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.user-orders-list li {
+    border: 1px solid #ebdbc8;
+    border-radius: 10px;
+    padding: 9px 10px;
+    display: grid;
+    gap: 2px;
+    background: #fffdfa;
+}
+
 .inventory-form {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -686,6 +768,16 @@ button[disabled] {
     flex-wrap: wrap;
 }
 
+.order-status-select {
+    min-width: 160px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #dfcfb9;
+    font-size: 13px;
+    padding: 0 8px;
+    background: #fff;
+}
+
 @keyframes riseIn {
     from {
         opacity: 0;
@@ -719,6 +811,11 @@ button[disabled] {
         padding: 14px 12px 28px;
     }
 
+    .session-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
     .auth-page-shell {
         min-height: auto;
         padding: 14px 12px 28px;
@@ -733,6 +830,19 @@ button[disabled] {
 
     .or-banner {
         min-height: 148px;
+    }
+
+    .or-carousel-footer {
+        justify-content: space-between;
+    }
+
+    .or-dot {
+        width: 24px;
+        min-width: 24px;
+    }
+
+    .or-dot.is-active {
+        width: 38px;
     }
 
     .step-actions {

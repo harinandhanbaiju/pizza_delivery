@@ -77,6 +77,25 @@ const AuthPanel = () => {
         () => mode === "admin-login" || mode === "admin-register",
         [mode]
     );
+    const isForgotMode = mode === "forgot-password";
+    const isResetMode = mode === "reset-password";
+    const isVerifyMode = mode === "verify-email";
+
+    const linkLabel = useMemo(() => {
+        if (!statusLink) {
+            return "";
+        }
+
+        if (statusLink.includes("/reset-password/")) {
+            return "Open reset link";
+        }
+
+        if (statusLink.includes("/verify-email/")) {
+            return "Open verification link";
+        }
+
+        return "Open link";
+    }, [statusLink]);
 
     const clearFeedback = () => {
         setErrorMessage("");
@@ -121,6 +140,9 @@ const AuthPanel = () => {
             if (mode === "forgot-password") {
                 const response = await forgotPassword(email);
                 setStatusMessage(response.message || "Password reset email sent");
+                if (response.resetPreviewUrl) {
+                    setStatusLink(response.resetPreviewUrl);
+                }
                 return;
             }
 
@@ -175,11 +197,13 @@ const AuthPanel = () => {
             {statusLink && (
                 <p className="auth-feedback auth-feedback-link">
                     <a href={statusLink} target="_blank" rel="noreferrer">
-                        Open verification link
+                        {linkLabel}
                     </a>
                 </p>
             )}
             {errorMessage && <p className="auth-feedback auth-feedback-error">{errorMessage}</p>}
+
+            {isForgotMode && <p className="auth-mode-note">Enter your email to receive a reset link.</p>}
 
             {(mode === "user-register" || mode === "admin-register") && (
                 <>
@@ -219,10 +243,10 @@ const AuthPanel = () => {
                 placeholder="Email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                required={mode !== "reset-password" && mode !== "verify-email"}
+                required={!isResetMode && !isVerifyMode}
             />
 
-            {mode === "reset-password" && (
+            {isResetMode && (
                 <input
                     type="text"
                     placeholder="Reset Token"
@@ -232,16 +256,18 @@ const AuthPanel = () => {
                 />
             )}
 
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required={mode !== "forgot-password" && mode !== "verify-email"}
-            />
+            {!isForgotMode && !isVerifyMode && (
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                />
+            )}
 
             <button type="submit" disabled={isLoading}>
-                {isLoading ? "Processing..." : "Submit"}
+                {isLoading ? "Processing..." : isForgotMode ? "Send Reset Link" : isResetMode ? "Update Password" : "Submit"}
             </button>
 
             {isAdminMode && <p className="auth-mode-note">Admin mode is active.</p>}

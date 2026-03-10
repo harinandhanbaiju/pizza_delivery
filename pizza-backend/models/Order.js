@@ -23,8 +23,15 @@ const orderSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["Received", "In Kitchen", "Sent"],
-            default: "Received",
+            enum: [
+                "Received",
+                "In Kitchen",
+                "Sent",
+                "Order Received",
+                "In the Kitchen",
+                "Sent to Delivery",
+            ],
+            default: "Order Received",
         },
         paymentStatus: {
             type: String,

@@ -6,6 +6,26 @@ const {
     decrementInventoryForOrder,
 } = require("../utils/orderPricing");
 
+const ORDER_STATUS = {
+    ORDER_RECEIVED: "Order Received",
+    IN_THE_KITCHEN: "In the Kitchen",
+    SENT_TO_DELIVERY: "Sent to Delivery",
+};
+
+const STATUS_ALIASES = {
+    "received": ORDER_STATUS.ORDER_RECEIVED,
+    "order received": ORDER_STATUS.ORDER_RECEIVED,
+    "in kitchen": ORDER_STATUS.IN_THE_KITCHEN,
+    "in the kitchen": ORDER_STATUS.IN_THE_KITCHEN,
+    "sent": ORDER_STATUS.SENT_TO_DELIVERY,
+    "sent to delivery": ORDER_STATUS.SENT_TO_DELIVERY,
+};
+
+const normalizeStatusInput = (status = "") => {
+    const normalized = String(status).trim().toLowerCase();
+    return STATUS_ALIASES[normalized] || null;
+};
+
 const isRazorpayTestMode = () => {
     return (
         String(process.env.RAZORPAY_MODE || "").toLowerCase() === "test" ||
@@ -242,9 +262,80 @@ const confirmTestPayment = async (req, res) => {
     }
 };
 
+// @desc    Get logged-in user's orders
+// @route   GET /api/orders/my
+// @access  Private
+const getMyOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({ userId: req.user._id }).sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            count: orders.length,
+            orders,
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Get all orders for admin
+// @route   GET /api/orders/admin
+// @access  Private/Admin
+const getOrdersForAdmin = async (req, res) => {
+    try {
+        const orders = await Order.find({})
+            .sort({ createdAt: -1 })
+            .populate("userId", "name email");
+
+        return res.status(200).json({
+            count: orders.length,
+            orders,
+            statuses: Object.values(ORDER_STATUS),
+        });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Update order status by admin
+// @route   PATCH /api/orders/admin/:id/status
+// @access  Private/Admin
+const updateOrderStatusByAdmin = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const canonicalStatus = normalizeStatusInput(req.body.status);
+
+        if (!canonicalStatus) {
+            return res.status(400).json({
+                message: "Invalid status. Allowed values: Order Received, In the Kitchen, Sent to Delivery",
+            });
+        }
+
+        const order = await Order.findByIdAndUpdate(
+            id,
+            { status: canonicalStatus },
+            { new: true, runValidators: true }
+        ).populate("userId", "name email");
+
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" });
+        }
+
+        return res.status(200).json({
+            message: "Order status updated",
+            order,
+        });
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
+    }
+};
+
 module.exports = {
     createOrder,
     createRazorpayOrder,
     verifyRazorpayPayment,
     confirmTestPayment,
+    getMyOrders,
+    getOrdersForAdmin,
+    updateOrderStatusByAdmin,
 };

@@ -27,6 +27,10 @@ const inventorySchema = new mongoose.Schema(
             required: true,
             min: 0,
         },
+        lowStockAlertSentAt: {
+            type: Date,
+            default: null,
+        },
     },
     {
         timestamps: true,

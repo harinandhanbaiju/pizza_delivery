@@ -36,6 +36,22 @@ export const createRazorpayOrder = async (pizzaConfig, token) => {
     return data;
 };
 
+export const getMyOrders = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/orders/my`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to load your orders");
+    }
+
+    return data;
+};
+
 export const verifyPayment = async (payload, token) => {
     const response = await fetch(`${API_BASE_URL}/orders/verify-payment`, {
         method: "POST",
@@ -63,6 +79,38 @@ export const confirmTestPayment = async (localOrderId, token) => {
 
     if (!response.ok) {
         throw new Error(data.message || "Test payment confirmation failed");
+    }
+
+    return data;
+};
+
+export const getAdminOrders = async (token) => {
+    const response = await fetch(`${API_BASE_URL}/orders/admin`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to load orders");
+    }
+
+    return data;
+};
+
+export const updateOrderStatusByAdmin = async (orderId, status, token) => {
+    const response = await fetch(`${API_BASE_URL}/orders/admin/${orderId}/status`, {
+        method: "PATCH",
+        headers: getAuthHeaders(token),
+        body: JSON.stringify({ status }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.message || "Failed to update order status");
     }
 
     return data;
