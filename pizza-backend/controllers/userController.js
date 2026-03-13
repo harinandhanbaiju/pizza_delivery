@@ -155,11 +155,16 @@ const registerAccount = async (req, res, targetRole) => {
 };
 
 // @desc    Verify user email
-// @route   GET /api/users/verify-email/:token
+// @route   GET /api/auth/verify-email?token=...
 // @access  Public
 const verifyUserEmail = async (req, res) => {
     try {
-        const { token } = req.params;
+        const token = req.query.token || req.params.token;
+
+        if (!token) {
+            return res.status(400).json({ message: "Verification token is required" });
+        }
+
         const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
         const user = await User.findOne({
@@ -308,6 +313,13 @@ const loginAdmin = async (req, res) => {
     return loginAccount(req, res, "admin");
 };
 
+// @desc    Login account (any role)
+// @route   POST /api/auth/login
+// @access  Public
+const loginAny = async (req, res) => {
+    return loginAccount(req, res, null);
+};
+
 // @desc    Forgot password
 // @route   POST /api/users/forgot-password
 // @access  Public
@@ -333,7 +345,7 @@ const forgotPassword = async (req, res) => {
         user.resetPasswordExpire = resetToken.expiresAt;
         await user.save();
 
-        const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password/${resetToken.rawToken}`;
+        const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${resetToken.rawToken}`;
         const mailResult = await sendPasswordResetEmail(user.email, resetUrl);
 
         return res.status(200).json({
@@ -346,12 +358,16 @@ const forgotPassword = async (req, res) => {
 };
 
 // @desc    Reset password
-// @route   POST /api/users/reset-password/:token
+// @route   POST /api/auth/reset-password
 // @access  Public
 const resetPassword = async (req, res) => {
     try {
-        const { token } = req.params;
+        const token = req.body.token || req.params.token;
         const { password } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ message: "Reset token is required" });
+        }
 
         const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
@@ -429,6 +445,7 @@ module.exports = {
     resendVerification,
     loginUser,
     loginAdmin,
+    loginAny,
     forgotPassword,
     resetPassword,
     getUserProfile,

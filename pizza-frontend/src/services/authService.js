@@ -11,6 +11,13 @@ const parseApiResponse = async (response) => {
     }
 
     if (!response.ok) {
+        const hasHtmlBody = rawBody && rawBody.includes("<!DOCTYPE html");
+        const routeMissingText = typeof rawBody === "string" && rawBody.includes("Cannot ");
+
+        if (hasHtmlBody || routeMissingText) {
+            throw new Error("API route not found on backend. Restart backend server and try again.");
+        }
+
         const fallbackMessage = rawBody && rawBody.includes("<!DOCTYPE html")
             ? "Auth API is not reachable at http://localhost:5000/api. Start backend server and try again."
             : "Request failed";
@@ -44,7 +51,7 @@ const postJson = async (url, payload) => {
 };
 
 export const registerUser = async (payload) => {
-    return postJson(`${API_BASE_URL}/users/register/user`, payload);
+    return postJson(`${API_BASE_URL}/auth/register`, payload);
 };
 
 export const registerAdmin = async (payload) => {
@@ -52,20 +59,28 @@ export const registerAdmin = async (payload) => {
 };
 
 export const loginUser = async (email, password) => {
-    return postJson(`${API_BASE_URL}/users/login/user`, { email, password });
+    return postJson(`${API_BASE_URL}/auth/login`, { email, password });
 };
 
 export const loginAdmin = async (email, password) => {
     return postJson(`${API_BASE_URL}/users/login/admin`, { email, password });
 };
 
+export const register = async (payload) => {
+    return postJson(`${API_BASE_URL}/auth/register`, payload);
+};
+
+export const login = async (email, password) => {
+    return postJson(`${API_BASE_URL}/auth/login`, { email, password });
+};
+
 export const verifyEmail = async (token) => {
-    const response = await fetch(`${API_BASE_URL}/users/verify-email/${token}`);
+    const response = await fetch(`${API_BASE_URL}/auth/verify-email?token=${encodeURIComponent(token)}`);
     return parseApiResponse(response);
 };
 
 export const forgotPassword = async (email) => {
-    return postJson(`${API_BASE_URL}/users/forgot-password`, { email });
+    return postJson(`${API_BASE_URL}/auth/forgot-password`, { email });
 };
 
 export const resendVerification = async (email) => {
@@ -73,7 +88,7 @@ export const resendVerification = async (email) => {
 };
 
 export const resetPassword = async (token, password) => {
-    return postJson(`${API_BASE_URL}/users/reset-password/${token}`, { password });
+    return postJson(`${API_BASE_URL}/auth/reset-password`, { token, password });
 };
 
 export const getUserProfile = async (token) => {
@@ -90,4 +105,30 @@ export const getUserProfile = async (token) => {
     }
 
     return parseApiResponse(response);
+};
+
+export const getAdminUsers = async (token, limit = 100) => {
+    const endpoints = [
+        `${API_BASE_URL}/admin/users?limit=${encodeURIComponent(limit)}`,
+        `${API_BASE_URL}/users/admin/users?limit=${encodeURIComponent(limit)}`,
+    ];
+
+    for (let i = 0; i < endpoints.length; i += 1) {
+        const endpoint = endpoints[i];
+        try {
+            const response = await fetch(endpoint, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            return await parseApiResponse(response);
+        } catch (error) {
+            if (i === endpoints.length - 1) {
+                throw error;
+            }
+        }
+    }
+
+    throw new Error("Failed to load admin users");
 };

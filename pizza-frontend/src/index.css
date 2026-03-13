@@ -611,6 +611,28 @@ button[disabled] {
     color: var(--brand-subtle);
 }
 
+.auth-inline-link {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    min-height: auto;
+    color: #204eac;
+    text-decoration: underline;
+    cursor: pointer;
+    font: inherit;
+    box-shadow: none;
+}
+
+.auth-inline-link:hover {
+    background: transparent;
+    transform: none;
+}
+
+.auth-inline-link:active {
+    transform: none;
+}
+
 .step-card {
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
@@ -792,6 +814,22 @@ button[disabled] {
     font-size: 13px;
     padding: 0 8px;
     background: #fff;
+}
+
+.admin-user-delete-btn {
+    background: #fff4f4;
+    color: var(--danger);
+    border: 1px solid #efc1c6;
+}
+
+.admin-user-delete-btn:hover {
+    background: #ffe8ea;
+    border-color: var(--danger);
+}
+
+.admin-user-self-tag {
+    font-size: 12px;
+    color: var(--brand-subtle);
 }
 
 @keyframes riseIn {

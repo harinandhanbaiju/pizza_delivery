@@ -10,9 +10,9 @@ import {
 } from "../services/authService";
 import { useAuth } from "../context/AuthContext";
 
-const AuthPanel = () => {
+const AuthPanel = ({ initialMode = "user-login", hideModeSwitch = false, onLoginSuccess }) => {
     const { user, login, logout } = useAuth();
-    const [mode, setMode] = useState("user-login");
+    const [mode, setMode] = useState(initialMode);
     const [statusMessage, setStatusMessage] = useState("");
     const [statusLink, setStatusLink] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -48,8 +48,17 @@ const AuthPanel = () => {
 
         if (path.startsWith("/verify-email/")) {
             setMode("verify-email");
+            return;
         }
-    }, []);
+
+        setMode(initialMode);
+    }, [initialMode]);
+
+    useEffect(() => {
+        if (hideModeSwitch && mode !== "reset-password" && mode !== "verify-email") {
+            setMode(initialMode);
+        }
+    }, [hideModeSwitch, initialMode, mode]);
 
     useEffect(() => {
         const verifyFromUrl = async () => {
@@ -163,6 +172,10 @@ const AuthPanel = () => {
             login(loggedInUser);
             setStatusMessage("Login successful");
             setPassword("");
+
+            if (onLoginSuccess) {
+                onLoginSuccess(loggedInUser, mode);
+            }
         } catch (error) {
             setErrorMessage(error.message || "Authentication request failed");
         } finally {
@@ -184,14 +197,16 @@ const AuthPanel = () => {
     return (
         <form className="auth-panel" onSubmit={handleSubmit}>
             <h2>Authentication</h2>
-            <div className="mode-switch">
-                <button type="button" className={mode === "user-login" ? "is-active" : ""} onClick={() => switchMode("user-login")}>User Login</button>
-                <button type="button" className={mode === "admin-login" ? "is-active" : ""} onClick={() => switchMode("admin-login")}>Admin Login</button>
-                <button type="button" className={mode === "user-register" ? "is-active" : ""} onClick={() => switchMode("user-register")}>User Register</button>
-                <button type="button" className={mode === "admin-register" ? "is-active" : ""} onClick={() => switchMode("admin-register")}>Admin Register</button>
-                <button type="button" className={mode === "forgot-password" ? "is-active" : ""} onClick={() => switchMode("forgot-password")}>Forgot</button>
-                <button type="button" className={mode === "reset-password" ? "is-active" : ""} onClick={() => switchMode("reset-password")}>Reset</button>
-            </div>
+            {!hideModeSwitch && (
+                <div className="mode-switch">
+                    <button type="button" className={mode === "user-login" ? "is-active" : ""} onClick={() => switchMode("user-login")}>User Login</button>
+                    <button type="button" className={mode === "admin-login" ? "is-active" : ""} onClick={() => switchMode("admin-login")}>Admin Login</button>
+                    <button type="button" className={mode === "user-register" ? "is-active" : ""} onClick={() => switchMode("user-register")}>User Register</button>
+                    <button type="button" className={mode === "admin-register" ? "is-active" : ""} onClick={() => switchMode("admin-register")}>Admin Register</button>
+                    <button type="button" className={mode === "forgot-password" ? "is-active" : ""} onClick={() => switchMode("forgot-password")}>Forgot</button>
+                    <button type="button" className={mode === "reset-password" ? "is-active" : ""} onClick={() => switchMode("reset-password")}>Reset</button>
+                </div>
+            )}
 
             {statusMessage && <p className="auth-feedback auth-feedback-success">{statusMessage}</p>}
             {statusLink && (

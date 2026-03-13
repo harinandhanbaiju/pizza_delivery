@@ -1,60 +1,61 @@
 import React from "react";
-import PizzaBuilder from "./components/PizzaBuilder";
-import { PizzaBuilderProvider } from "./context/PizzaBuilderContext";
 import { AuthProvider } from "./context/AuthContext";
-import AuthPanel from "./components/AuthPanel";
-import PizzaDashboard from "./components/PizzaDashboard";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { PizzaBuilderProvider } from "./context/PizzaBuilderContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import WorkspaceShell from "./components/WorkspaceShell";
 import { useAuth } from "./context/AuthContext";
-import AdminInventoryManager from "./components/AdminInventoryManager";
-import AdminOrderManager from "./components/AdminOrderManager";
-import OvenRushHomeChrome from "./components/OvenRushHomeChrome";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
-const AuthPage = () => {
-    return (
-        <div className="auth-page-shell">
-            <section className="auth-page-hero">
-                <p className="auth-page-kicker">FC Barcelona Edition</p>
-                <h1>Login to enter the Blaugrana Pizza Arena</h1>
-                <p>
-                    Sign in to craft match-day pizzas, track kitchen stock, and place your order with champion speed.
-                </p>
-            </section>
-            <AuthPanel />
-        </div>
-    );
-};
-
-const AuthenticatedArea = () => {
-    const { user, logout } = useAuth();
+const RoleEntryRoute = ({ role }) => {
+    const { user } = useAuth();
 
     if (!user) {
-        return <AuthPage />;
+        return <LoginPage forcedRole={role} />;
     }
 
-    return (
-        <div className="app-shell">
-            <section className="session-bar">
-                <p>
-                    Signed in as <strong>{user?.email}</strong>
-                </p>
-                <button type="button" className="session-logout" onClick={logout}>
-                    Logout
-                </button>
-            </section>
-            <OvenRushHomeChrome />
-            <PizzaDashboard />
-            {user?.role === "admin" && <AdminOrderManager />}
-            {user?.role === "admin" && <AdminInventoryManager />}
-            <PizzaBuilder />
-        </div>
-    );
+    if (role === "admin" && user.role !== "admin") {
+        return <Navigate to="/user" replace />;
+    }
+
+    if (role === "user" && user.role === "admin") {
+        return <Navigate to="/admin" replace />;
+    }
+
+    return <WorkspaceShell showAdminPanels={role === "admin"} />;
 };
 
 const App = () => {
     return (
         <AuthProvider>
             <PizzaBuilderProvider>
-                <AuthenticatedArea />
+                <Routes>
+                    <Route path="/" element={<Navigate to="/user" replace />} />
+                    <Route path="/user" element={<RoleEntryRoute role="user" />} />
+                    <Route path="/admin" element={<RoleEntryRoute role="admin" />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/verify-email" element={<VerifyEmailPage />} />
+                    <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
+                    <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                    <Route
+                        path="/dashboard"
+                        element={(
+                            <ProtectedRoute>
+                                <WorkspaceShell />
+                            </ProtectedRoute>
+                        )}
+                    />
+                    <Route path="/admin-login" element={<Navigate to="/admin" replace />} />
+                    <Route path="/dashboard/login" element={<Navigate to="/user" replace />} />
+                    <Route path="*" element={<Navigate to="/user" replace />} />
+                </Routes>
             </PizzaBuilderProvider>
         </AuthProvider>
     );

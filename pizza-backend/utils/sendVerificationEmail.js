@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 
 const sendVerificationEmail = async (email, token) => {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    const verificationLink = `${frontendUrl}/verify-email/${token}`;
+    const verificationLink = `${frontendUrl}/verify-email?token=${token}`;
 
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || process.env.EMAIL_PASS === "YOUR_16_CHAR_APP_PASSWORD") {
         console.log(`Verification link for ${email}: ${verificationLink}`);

@@ -50,6 +50,8 @@ app.use(express.json());
 
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/auth", require("./routes/userRoutes"));
+app.use("/api/profile", require("./routes/profileRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/inventory", require("./routes/inventoryRoutes"));
 
